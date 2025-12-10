@@ -98,11 +98,15 @@
       cursor: pointer;
       transition: all 0.3s;
     }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
     .btn-primary {
       background: #667eea;
       color: white;
     }
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       background: #5568d3;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(102,126,234,0.4);
@@ -111,21 +115,21 @@
       background: #10b981;
       color: white;
     }
-    .btn-success:hover {
+    .btn-success:hover:not(:disabled) {
       background: #059669;
     }
     .btn-warning {
       background: #f59e0b;
       color: white;
     }
-    .btn-warning:hover {
+    .btn-warning:hover:not(:disabled) {
       background: #d97706;
     }
     .btn-danger {
       background: #ef4444;
       color: white;
     }
-    .btn-danger:hover {
+    .btn-danger:hover:not(:disabled) {
       background: #dc2626;
     }
     .btn-sm {
@@ -332,6 +336,8 @@
     const teamView = document.getElementById("teamView");
     const teamMemberNameInput = document.getElementById("teamMemberName");
     const currentUserDisplay = document.getElementById("currentUserDisplay");
+    const managerShiftList = document.getElementById("managerShiftList");
+    const teamShiftList = document.getElementById("teamShiftList");
 
     // Set saved name if exists
     if (currentUserName) {
@@ -369,12 +375,24 @@
       managerTab.classList.remove("active");
     };
 
+    // Format date helper
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+
     // Create shift
     const shiftForm = document.getElementById("shiftForm");
     shiftForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       
       const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.textContent;
       submitBtn.disabled = true;
       submitBtn.textContent = 'Creating...';
 
@@ -400,98 +418,111 @@
         alert("❌ Error creating shift. Please try again.");
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Shift';
+        submitBtn.textContent = originalText;
       }
     });
 
-    // Format date helper
-    function formatDate(dateStr) {
-      const date = new Date(dateStr + 'T00:00:00');
-      return date.toLocaleDateString('en-GB', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-      });
-    }
-
-    // Real-time listener
-    const qShifts = query(collection(db, "shifts"), orderBy("date"), orderBy("startTime"));
+    // Real-time listener for shifts
+    const shiftsQuery = query(
+      collection(db, "shifts"), 
+      orderBy("createdAt", "desc")
+    );
     
-    onSnapshot(qShifts, (snapshot) => {
-      const managerList = document.getElementById("managerShiftList");
-      const teamList = document.getElementById("teamShiftList");
-
+    onSnapshot(shiftsQuery, (snapshot) => {
+      // Handle empty state
       if (snapshot.empty) {
-        managerList.innerHTML = '<p class="empty">No shifts created yet. Create your first shift above!</p>';
-        teamList.innerHTML = '<p class="empty">No shifts available at the moment.</p>';
+        managerShiftList.innerHTML = '<p class="empty">No shifts created yet. Create your first shift above!</p>';
+        teamShiftList.innerHTML = '<p class="empty">No shifts available at the moment.</p>';
         return;
       }
 
-      managerList.innerHTML = "";
-      teamList.innerHTML = "";
+      // Clear both lists
+      managerShiftList.innerHTML = "";
+      teamShiftList.innerHTML = "";
 
+      // Process each shift
       snapshot.forEach((docSnap) => {
         const shift = docSnap.data();
         const id = docSnap.id;
 
-        // Manager View Card
-        const managerCard = document.createElement("div");
-        managerCard.className = "shift-card";
+        // Create Manager View Card
+        createManagerShiftCard(shift, id);
         
-        const status = shift.claimedBy
-          ? `<span class="status claimed">Claimed by ${shift.claimedBy}</span>`
-          : `<span class="status available">Available</span>`;
-
-        managerCard.innerHTML = `
-          <div class="shift-header">
-            <strong>${shift.role}</strong>
-            ${status}
-          </div>
-          <div class="shift-details">
-            📅 ${formatDate(shift.date)} | ⏰ ${shift.startTime} - ${shift.endTime}
-          </div>
-        `;
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "btn btn-danger btn-sm";
-        deleteBtn.textContent = "Delete Shift";
-        deleteBtn.onclick = () => deleteShift(id);
-        managerCard.appendChild(deleteBtn);
-        managerList.appendChild(managerCard);
-
-        // Team View Card
-        const teamCard = document.createElement("div");
-        teamCard.className = "shift-card";
-        
-        teamCard.innerHTML = `
-          <div class="shift-header">
-            <strong>${shift.role}</strong>
-            ${status}
-          </div>
-          <div class="shift-details">
-            📅 ${formatDate(shift.date)} | ⏰ ${shift.startTime} - ${shift.endTime}
-          </div>
-        `;
-
-        const actionBtn = document.createElement("button");
-        if (shift.claimedBy) {
-          if (shift.claimedBy === currentUserName) {
-            actionBtn.textContent = "Unclaim Shift";
-            actionBtn.className = "btn btn-warning btn-sm";
-            actionBtn.onclick = () => unclaimShift(id);
-            teamCard.appendChild(actionBtn);
-          }
-        } else {
-          actionBtn.textContent = "Claim Shift";
-          actionBtn.className = "btn btn-success btn-sm";
-          actionBtn.onclick = () => claimShift(id);
-          teamCard.appendChild(actionBtn);
-        }
-
-        teamList.appendChild(teamCard);
+        // Create Team View Card
+        createTeamShiftCard(shift, id);
       });
+    }, (error) => {
+      console.error("Error loading shifts:", error);
+      managerShiftList.innerHTML = '<p class="loading">❌ Error loading shifts. Please refresh the page.</p>';
+      teamShiftList.innerHTML = '<p class="loading">❌ Error loading shifts. Please refresh the page.</p>';
     });
+
+    // Create Manager Shift Card
+    function createManagerShiftCard(shift, id) {
+      const card = document.createElement("div");
+      card.className = "shift-card";
+      
+      const statusClass = shift.claimedBy ? "claimed" : "available";
+      const statusText = shift.claimedBy ? `Claimed by ${shift.claimedBy}` : "Available";
+
+      card.innerHTML = `
+        <div class="shift-header">
+          <strong>${shift.role}</strong>
+          <span class="status ${statusClass}">${statusText}</span>
+        </div>
+        <div class="shift-details">
+          📅 ${formatDate(shift.date)} | ⏰ ${shift.startTime} - ${shift.endTime}
+        </div>
+      `;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "btn btn-danger btn-sm";
+      deleteBtn.textContent = "Delete Shift";
+      deleteBtn.onclick = () => deleteShift(id);
+      
+      card.appendChild(deleteBtn);
+      managerShiftList.appendChild(card);
+    }
+
+    // Create Team Shift Card
+    function createTeamShiftCard(shift, id) {
+      const card = document.createElement("div");
+      card.className = "shift-card";
+      
+      const statusClass = shift.claimedBy ? "claimed" : "available";
+      const statusText = shift.claimedBy ? `Claimed by ${shift.claimedBy}` : "Available";
+
+      card.innerHTML = `
+        <div class="shift-header">
+          <strong>${shift.role}</strong>
+          <span class="status ${statusClass}">${statusText}</span>
+        </div>
+        <div class="shift-details">
+          📅 ${formatDate(shift.date)} | ⏰ ${shift.startTime} - ${shift.endTime}
+        </div>
+      `;
+
+      // Add action button based on shift status
+      if (shift.claimedBy) {
+        // Show unclaim button only if current user claimed it
+        if (shift.claimedBy === currentUserName) {
+          const unclaimBtn = document.createElement("button");
+          unclaimBtn.className = "btn btn-warning btn-sm";
+          unclaimBtn.textContent = "Unclaim Shift";
+          unclaimBtn.onclick = () => unclaimShift(id);
+          card.appendChild(unclaimBtn);
+        }
+      } else {
+        // Show claim button for available shifts
+        const claimBtn = document.createElement("button");
+        claimBtn.className = "btn btn-success btn-sm";
+        claimBtn.textContent = "Claim Shift";
+        claimBtn.onclick = () => claimShift(id);
+        card.appendChild(claimBtn);
+      }
+
+      teamShiftList.appendChild(card);
+    }
 
     // Claim shift
     async function claimShift(id) {
@@ -539,10 +570,6 @@
         }
       }
     }
-
-    window.claimShift = claimShift;
-    window.unclaimShift = unclaimShift;
-    window.deleteShift = deleteShift;
   </script>
 </body>
 </html>
