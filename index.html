@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shift Rota Lite</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    header h1 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .tab {
+      padding: 10px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #e0e0e0;
+      color: #333;
+      font-weight: 600;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+    .tab:hover {
+      background: #d0d0d0;
+    }
+    .tab.active {
+      background: #667eea;
+      color: white;
+      border-color: #5568d3;
+    }
+    .card {
+      background: white;
+      padding: 25px;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: #555;
+      font-weight: 500;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+    }
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .btn-warning {
+      background: #f59e0b;
+      color: white;
+    }
+    .btn-warning:hover {
+      background: #d97706;
+    }
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+    .shift-list {
+      display: grid;
+      gap: 15px;
+    }
+    .shift-card {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 10px;
+      border-left: 4px solid #667eea;
+      transition: all 0.3s;
+    }
+    .shift-card:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .shift-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .shift-header strong {
+      font-size: 18px;
+      color: #333;
+    }
+    .status {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .status.available {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.claimed {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .shift-details {
+      color: #666;
+      margin-bottom: 15px;
+      font-size: 15px;
+    }
+    .loading {
+      text-align: center;
+      color: #999;
+      padding: 40px;
+      font-style: italic;
+    }
+    .empty {
+      text-align: center;
+      color: #999;
+      padding: 40px;
+    }
+    .name-input-section {
+      background: #fffbeb;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #f59e0b;
+    }
+    .name-input-section p {
+      margin-bottom: 10px;
+      color: #92400e;
+      font-weight: 500;
+    }
+    .current-user {
+      background: #dbeafe;
+      padding: 10px 15px;
+      border-radius: 8px;
+      color: #1e40af;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+      header {
+        padding: 20px;
+      }
+      header h1 {
+        font-size: 22px;
+      }
+      .card {
+        padding: 20px;
+      }
+      .tabs {
+        flex-direction: column;
+      }
+      .tab {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🗓️ Shift Rota Lite</h1>
+      <div class="tabs">
+        <div id="managerTab" class="tab active">👔 Manager</div>
+        <div id="teamTab" class="tab">👥 Team</div>
+      </div>
+    </header>
+
+    <!-- Manager View -->
+    <div id="managerView">
+      <div class="card">
+        <h2>Create New Shift</h2>
+        <form id="shiftForm">
+          <div class="form-group">
+            <label>Date:</label>
+            <input type="date" id="date" required />
+          </div>
+          <div class="form-group">
+            <label>Start Time:</label>
+            <input type="time" id="startTime" required />
+          </div>
+          <div class="form-group">
+            <label>End Time:</label>
+            <input type="time" id="endTime" required />
+          </div>
+          <div class="form-group">
+            <label>Role/Position:</label>
+            <input type="text" id="role" placeholder="e.g., Cashier, Server, Kitchen" required />
+          </div>
+          <button type="submit" class="btn btn-primary">Create Shift</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>All Shifts</h2>
+        <div id="managerShiftList" class="shift-list">
+          <p class="loading">Loading shifts...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team View -->
+    <div id="teamView" style="display:none">
+      <div class="card">
+        <div class="name-input-section">
+          <p>👤 Enter your name to claim shifts:</p>
+          <input type="text" id="teamMemberName" placeholder="Your Name" />
+        </div>
+        <div id="currentUserDisplay"></div>
+      </div>
+
+      <div class="card">
+        <h2>Available Shifts</h2>
+        <div id="teamShiftList" class="shift-list">
+          <p class="loading">Loading shifts...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase + JS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot,
+      updateDoc,
+      deleteDoc,
+      doc,
+      query,
+      orderBy,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCZPV52obaRmHsYwsUn0GAWMMyEsMvWY4k",
+      authDomain: "shift-rota-lite-2669d.firebaseapp.com",
+      projectId: "shift-rota-lite-2669d",
+      storageBucket: "shift-rota-lite-2669d.firebasestorage.app",
+      messagingSenderId: "961826702196",
+      appId: "1:961826702196:web:5265939a77799f2dfaa221",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Store current user name
+    let currentUserName = localStorage.getItem('teamMemberName') || '';
+    
+    // DOM Elements
+    const managerTab = document.getElementById("managerTab");
+    const teamTab = document.getElementById("teamTab");
+    const managerView = document.getElementById("managerView");
+    const teamView = document.getElementById("teamView");
+    const teamMemberNameInput = document.getElementById("teamMemberName");
+    const currentUserDisplay = document.getElementById("currentUserDisplay");
+
+    // Set saved name if exists
+    if (currentUserName) {
+      teamMemberNameInput.value = currentUserName;
+      updateCurrentUserDisplay();
+    }
+
+    // Save name to localStorage when changed
+    teamMemberNameInput.addEventListener('input', (e) => {
+      currentUserName = e.target.value.trim();
+      localStorage.setItem('teamMemberName', currentUserName);
+      updateCurrentUserDisplay();
+    });
+
+    function updateCurrentUserDisplay() {
+      if (currentUserName) {
+        currentUserDisplay.innerHTML = `<div class="current-user">✓ Logged in as: ${currentUserName}</div>`;
+      } else {
+        currentUserDisplay.innerHTML = '';
+      }
+    }
+
+    // Tab switching
+    managerTab.onclick = () => {
+      managerView.style.display = "block";
+      teamView.style.display = "none";
+      managerTab.classList.add("active");
+      teamTab.classList.remove("active");
+    };
+
+    teamTab.onclick = () => {
+      managerView.style.display = "none";
+      teamView.style.display = "block";
+      teamTab.classList.add("active");
+      managerTab.classList.remove("active");
+    };
+
+    // Create shift
+    const shiftForm = document.getElementById("shiftForm");
+    shiftForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+
+      try {
+        const date = document.getElementById("date").value;
+        const startTime = document.getElementById("startTime").value;
+        const endTime = document.getElementById("endTime").value;
+        const role = document.getElementById("role").value;
+
+        await addDoc(collection(db, "shifts"), {
+          date,
+          startTime,
+          endTime,
+          role,
+          claimedBy: null,
+          createdAt: Timestamp.now()
+        });
+
+        shiftForm.reset();
+        alert("✅ Shift created successfully!");
+      } catch (error) {
+        console.error("Error creating shift:", error);
+        alert("❌ Error creating shift. Please try again.");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Shift';
+      }
+    });
+
+    // Format date helper
+    function formatDate(dateStr) {
+      const date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+
+    // Real-time listener
+    const qShifts = query(collection(db, "shifts"), orderBy("date"), orderBy("startTime"));
+    
+    onSnapshot(qShifts, (snapshot) => {
+      const managerList = document.getElementById("managerShiftList");
+      const teamList = document.getElementById("teamShiftList");
+
+      if (snapshot.empty) {
+        managerList.innerHTML = '<p class="empty">No shifts created yet. Create your first shift above!</p>';
+        teamList.innerHTML = '<p class="empty">No shifts available at the moment.</p>';
+        return;
+      }
+
+      managerList.innerHTML = "";
+      teamList.innerHTML = "";
+
+      snapshot.forEach((docSnap) => {
+        const shift = docSnap.data();
+        const id = docSnap.id;
+
+        // Manager View Card
+        const managerCard = document.createElement("div");
+        managerCard.className = "shift-card";
+        
+        const status = shift.claimedBy
+          ? `<span class="status claimed">Claimed by ${shift.claimedBy}</span>`
+          : `<span class="status available">Available</span>`;
+
+        managerCard.innerHTML = `
+          <div class="shift-header">
+            <strong>${shift.role}</strong>
+            ${status}
+          </div>
+          <div class="shift-details">
+            📅 ${formatDate(shift.date)} | ⏰ ${shift.startTime} - ${shift.endTime}
+          </div>
+        `;
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "btn btn-danger btn-sm";
+        deleteBtn.textContent = "Delete Shift";
+        deleteBtn.onclick = () => deleteShift(id);
+        managerCard.appendChild(deleteBtn);
+        managerList.appendChild(managerCard);
+
+        // Team View Card
+        const teamCard = document.createElement("div");
+        teamCard.className = "shift-card";
+        
+        teamCard.innerHTML = `
+          <div class="shift-header">
+            <strong>${shift.role}</strong>
+            ${status}
+          </div>
+          <div class="shift-details">
+            📅 ${formatDate(shift.date)} | ⏰ ${shift.startTime} - ${shift.endTime}
+          </div>
+        `;
+
+        const actionBtn = document.createElement("button");
+        if (shift.claimedBy) {
+          if (shift.claimedBy === currentUserName) {
+            actionBtn.textContent = "Unclaim Shift";
+            actionBtn.className = "btn btn-warning btn-sm";
+            actionBtn.onclick = () => unclaimShift(id);
+            teamCard.appendChild(actionBtn);
+          }
+        } else {
+          actionBtn.textContent = "Claim Shift";
+          actionBtn.className = "btn btn-success btn-sm";
+          actionBtn.onclick = () => claimShift(id);
+          teamCard.appendChild(actionBtn);
+        }
+
+        teamList.appendChild(teamCard);
+      });
+    });
+
+    // Claim shift
+    async function claimShift(id) {
+      if (!currentUserName) {
+        alert("⚠️ Please enter your name first!");
+        teamMemberNameInput.focus();
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "shifts", id), {
+          claimedBy: currentUserName
+        });
+        alert("✅ Shift claimed successfully!");
+      } catch (error) {
+        console.error("Error claiming shift:", error);
+        alert("❌ Error claiming shift. Please try again.");
+      }
+    }
+
+    // Unclaim shift
+    async function unclaimShift(id) {
+      if (confirm("Are you sure you want to unclaim this shift?")) {
+        try {
+          await updateDoc(doc(db, "shifts", id), {
+            claimedBy: null
+          });
+          alert("✅ Shift unclaimed!");
+        } catch (error) {
+          console.error("Error unclaiming shift:", error);
+          alert("❌ Error unclaiming shift. Please try again.");
+        }
+      }
+    }
+
+    // Delete shift
+    async function deleteShift(id) {
+      if (confirm("⚠️ Are you sure you want to delete this shift? This cannot be undone.")) {
+        try {
+          await deleteDoc(doc(db, "shifts", id));
+          alert("✅ Shift deleted successfully!");
+        } catch (error) {
+          console.error("Error deleting shift:", error);
+          alert("❌ Error deleting shift. Please try again.");
+        }
+      }
+    }
+
+    window.claimShift = claimShift;
+    window.unclaimShift = unclaimShift;
+    window.deleteShift = deleteShift;
+  </script>
+</body>
+</html>
